@@ -7,6 +7,7 @@ class ReviewSerializers(serializers.ModelSerializer):
         fields = '__all__'
 
 class WatchlistSerializers(serializers.ModelSerializer):
+    reviews = ReviewSerializers(many=True, read_only=True)
     class Meta:
         model = Watchlist
         fields = '__all__'
