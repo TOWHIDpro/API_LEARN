@@ -1,27 +1,40 @@
-from audioop import minmax
-from venv import create
+from django.utils.text import slugify
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 # Create your models here.
+# ------------------STREAMING PLATFORMS----------#
 class StreamPlatform(models.Model):
     name = models.CharField(max_length=30)
     about = models.CharField(max_length=150)
     website = models.URLField(max_length=100)
+    slug = models.SlugField(max_length=255, blank=True, unique=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super(StreamPlatform, self).save(*args, **kwargs)
     def __str__(self):
         return self.name
 
-
+# ------------------Watch------------------------#
 class Watchlist(models.Model):
     title = models.CharField(max_length=50)
     storyline = models.CharField(max_length=200)
     platform = models.ForeignKey(StreamPlatform, on_delete=models.CASCADE, related_name='watchlist')
     active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
+    slug = models.SlugField(max_length=255, blank=True, unique=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super(Watchlist, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.title
 
+# ------------------Review------------------------#
 class Review(models.Model):
     rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     active = models.BooleanField(default=True)
