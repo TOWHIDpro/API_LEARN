@@ -1,8 +1,9 @@
+from rest_framework import permissions
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, CreateAPIView
 
 from . serializers import StreamPlatformSerializer, WatchlistSerializers, ReviewSerializers
 from watchlist.models import StreamPlatform, Watchlist, Review
-from . permissions import AdminOrReadonly
+from . permissions import AdminOrReadonly, AuthorOrReadonly
 
 # ------------------STREAMING PLATFORMS------------------------#
 class StreamPlatformListView(ListCreateAPIView):
@@ -20,11 +21,13 @@ class StreamPlatformDetailView(RetrieveUpdateDestroyAPIView):
 class WatchlistListView(ListCreateAPIView):
     queryset = Watchlist.objects.all()
     serializer_class = WatchlistSerializers
+    permission_classes = [AdminOrReadonly]
 
 class WatchlistDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Watchlist
     serializer_class = WatchlistSerializers
     lookup_field = 'slug'
+    permission_classes = [AdminOrReadonly]
 
 # ------------------Review------------------------#
 class ReviewListView(ListAPIView):
@@ -38,8 +41,11 @@ class ReviewCreateView(CreateAPIView):
     def perform_create(self, serializer):
         pk = self.kwargs['pk']
         watchlist = Watchlist.objects.get(pk=pk)
-        serializer.save(watchlist=watchlist)
+        author = self.request.user
+        serializer.save(watchlist=watchlist, author=author)
+    permission_classes = [permissions.IsAuthenticated]
 
 class ReviewDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Review
     serializer_class = ReviewSerializers
+    permission_classes = [AuthorOrReadonly]

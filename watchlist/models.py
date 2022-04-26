@@ -1,6 +1,7 @@
 from django.utils.text import slugify
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth.models import User
 
 # Create your models here.
 # ------------------STREAMING PLATFORMS----------#
@@ -36,6 +37,7 @@ class Watchlist(models.Model):
 
 # ------------------Review------------------------#
 class Review(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user')
     rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     active = models.BooleanField(default=True)
     watchlist = models.ForeignKey(Watchlist, on_delete=models.CASCADE, related_name='reviews')
