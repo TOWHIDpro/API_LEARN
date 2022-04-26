@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, CreateAPIView
 
 from . serializers import StreamPlatformSerializer, WatchlistSerializers, ReviewSerializers
@@ -38,13 +39,28 @@ class ReviewListView(ListAPIView):
 
 class ReviewCreateView(CreateAPIView):
     serializer_class = ReviewSerializers
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Review
     def perform_create(self, serializer):
         pk = self.kwargs['pk']
         watchlist = Watchlist.objects.get(pk=pk)
         author = self.request.user
-        serializer.save(watchlist=watchlist, author=author)
-    permission_classes = [permissions.IsAuthenticated]
+        review_queryset = Review.objects.filter(watchlist=watchlist, author=author)
+        if review_queryset.exists():
+            raise ValidationError('You already review this')
 
+        # AVG rating rating logic
+        if watchlist.number_of_ratings == 0:
+            watchlist.avg_rating = serializer.validated_data['rating']
+            print(watchlist.storyline)
+        else:
+            watchlist.avg_rating = (watchlist.avg_rating+serializer.validated_data['rating'])/2
+        watchlist.number_of_ratings = watchlist.number_of_ratings+1
+        watchlist.save()
+        # ---------------------------------------------------------
+        serializer.save(watchlist=watchlist, author=author)
+    
+ 
 class ReviewDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Review
     serializer_class = ReviewSerializers
