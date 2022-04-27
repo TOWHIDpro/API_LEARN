@@ -36,6 +36,7 @@ class ReviewListView(ListAPIView):
     def get_queryset(self):
         pk = self.kwargs['pk']
         return Review.objects.filter(watchlist=pk)
+    permission_classes = [permissions.IsAuthenticated]
 
 class ReviewCreateView(CreateAPIView):
     serializer_class = ReviewSerializers
