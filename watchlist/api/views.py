@@ -1,3 +1,4 @@
+from django.forms import SlugField
 from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, CreateAPIView
@@ -15,6 +16,7 @@ class StreamPlatformListView(ListCreateAPIView):
 class StreamPlatformDetailView(RetrieveUpdateDestroyAPIView):
     queryset = StreamPlatform
     serializer_class = StreamPlatformSerializer
+    permission_classes = [AdminOrReadonly]
     lookup_field = 'slug'
     
 
@@ -27,24 +29,23 @@ class WatchlistListView(ListCreateAPIView):
 class WatchlistDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Watchlist
     serializer_class = WatchlistSerializers
-    lookup_field = 'slug'
     permission_classes = [AdminOrReadonly]
+    lookup_field = 'slug'
+    
 
 # ------------------Review------------------------#
 class ReviewListView(ListAPIView):
     serializer_class = ReviewSerializers
     def get_queryset(self):
-        pk = self.kwargs['pk']
-        return Review.objects.filter(watchlist=pk)
-    permission_classes = [permissions.IsAuthenticated]
+        watchlist = Watchlist.objects.get(slug=self.kwargs['slug'])
+        return Review.objects.filter(watchlist=watchlist.id)
 
 class ReviewCreateView(CreateAPIView):
     serializer_class = ReviewSerializers
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     queryset = Review
     def perform_create(self, serializer):
-        pk = self.kwargs['pk']
-        watchlist = Watchlist.objects.get(pk=pk)
+        watchlist = Watchlist.objects.get(slug=self.kwargs['slug'])
         author = self.request.user
         review_queryset = Review.objects.filter(watchlist=watchlist, author=author)
         if review_queryset.exists():
@@ -53,10 +54,9 @@ class ReviewCreateView(CreateAPIView):
         # AVG rating rating logic
         if watchlist.number_of_ratings == 0:
             watchlist.avg_rating = serializer.validated_data['rating']
-            print(watchlist.storyline)
         else:
             watchlist.avg_rating = (watchlist.avg_rating+serializer.validated_data['rating'])/2
-        watchlist.number_of_ratings = watchlist.number_of_ratings+1
+        watchlist.number_of_ratings = Review.objects.filter(watchlist=watchlist.id).count()+1
         watchlist.save()
         # ---------------------------------------------------------
         serializer.save(watchlist=watchlist, author=author)

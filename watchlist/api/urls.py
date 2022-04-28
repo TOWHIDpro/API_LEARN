@@ -11,7 +11,7 @@ urlpatterns = [
     path('watchlist/<slug:slug>', WatchlistDetailView.as_view(), name="watchlist-details"),
 
     # ------------------Review------------------------#
-    path('watchlist/<int:pk>/review-list', ReviewListView.as_view(), name="review-list"),
-    path('watchlist/<int:pk>/review-create', ReviewCreateView.as_view(), name="review-create"),
+    path('watchlist/<slug:slug>/review-list', ReviewListView.as_view(), name="review-list"),
+    path('watchlist/<slug:slug>/review-create', ReviewCreateView.as_view(), name="review-create"),
     path('review/<int:pk>', ReviewDetailView.as_view(), name="review-details"),
 ]
