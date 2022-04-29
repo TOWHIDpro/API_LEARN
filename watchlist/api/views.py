@@ -3,8 +3,8 @@ from rest_framework import permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, CreateAPIView
 
-from . serializers import StreamPlatformSerializer, WatchlistSerializers, ReviewSerializers
-from watchlist.models import StreamPlatform, Watchlist, Review
+from . serializers import StreamPlatformSerializer, ShowSerializers, ReviewSerializers
+from watchlist.models import StreamPlatform, Show, Review
 from . permissions import AdminOrReadonly, AuthorOrReadonly
 
 # ------------------STREAMING PLATFORMS------------------------#
@@ -21,14 +21,14 @@ class StreamPlatformDetailView(RetrieveUpdateDestroyAPIView):
     
 
 # ------------------Watch------------------------#
-class WatchlistListView(ListCreateAPIView):
-    queryset = Watchlist.objects.all()
-    serializer_class = WatchlistSerializers
+class ShowListView(ListCreateAPIView):
+    queryset = Show.objects.all()
+    serializer_class = ShowSerializers
     permission_classes = [AdminOrReadonly]
 
-class WatchlistDetailView(RetrieveUpdateDestroyAPIView):
-    queryset = Watchlist
-    serializer_class = WatchlistSerializers
+class ShowDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Show
+    serializer_class = ShowSerializers
     permission_classes = [AdminOrReadonly]
     lookup_field = 'slug'
     
@@ -37,29 +37,29 @@ class WatchlistDetailView(RetrieveUpdateDestroyAPIView):
 class ReviewListView(ListAPIView):
     serializer_class = ReviewSerializers
     def get_queryset(self):
-        watchlist = Watchlist.objects.get(slug=self.kwargs['slug'])
-        return Review.objects.filter(watchlist=watchlist.id)
+        show = show.objects.get(slug=self.kwargs['slug'])
+        return Review.objects.filter(show=show.id)
 
 class ReviewCreateView(CreateAPIView):
     serializer_class = ReviewSerializers
     # permission_classes = [permissions.IsAuthenticated]
     queryset = Review
     def perform_create(self, serializer):
-        watchlist = Watchlist.objects.get(slug=self.kwargs['slug'])
+        show = show.objects.get(slug=self.kwargs['slug'])
         author = self.request.user
-        review_queryset = Review.objects.filter(watchlist=watchlist, author=author)
+        review_queryset = Review.objects.filter(show=show, author=author)
         if review_queryset.exists():
             raise ValidationError('You already review this')
 
         # AVG rating rating logic
-        if watchlist.number_of_ratings == 0:
-            watchlist.avg_rating = serializer.validated_data['rating']
+        if show.number_of_ratings == 0:
+            show.avg_rating = serializer.validated_data['rating']
         else:
-            watchlist.avg_rating = (watchlist.avg_rating+serializer.validated_data['rating'])/2
-        watchlist.number_of_ratings = Review.objects.filter(watchlist=watchlist.id).count()+1
-        watchlist.save()
+            show.avg_rating = (show.avg_rating+serializer.validated_data['rating'])/2
+        show.number_of_ratings = Review.objects.filter(show=show.id).count()+1
+        show.save()
         # ---------------------------------------------------------
-        serializer.save(watchlist=watchlist, author=author)
+        serializer.save(show=show, author=author)
     
  
 class ReviewDetailView(RetrieveUpdateDestroyAPIView):
